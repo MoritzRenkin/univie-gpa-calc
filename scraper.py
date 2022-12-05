@@ -1,5 +1,4 @@
 from time import sleep
-import sys
 from getpass import getpass
 
 import pandas as pd
@@ -11,8 +10,10 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 
 username = input("uspace username: ")
-password = getpass("uspace password: ")
+password = input("uspace password: ")
 browser = "edge" # firefox, chrome or edge
+
+save_grades_to_csv = True
 
 print(f"Trying to launch {browser}")
 if browser == "firefox":
@@ -23,6 +24,7 @@ elif browser == "edge":
     driver = webdriver.Edge(executable_path=EdgeChromiumDriverManager().install())
 else:
     raise RuntimeError("Invalid Browser.")
+print(f"{browser} launched successfully")
 
 driver.implicitly_wait(5)
 
@@ -57,10 +59,10 @@ def expand_grade_page():
     driver.get("https://uspace.univie.ac.at/web/studium/pruefungspass")
     sleep(3)
 
-    for i in range(2):
+    for _ in range(2):
         labels = driver.find_elements_by_tag_name("label")
         for label in labels:
-            sleep(.1)
+            sleep(.2)
             try:
                 i = label.find_element_by_xpath("./input")
                 is_expanded = i.get_attribute("aria-expanded") == "true"
@@ -70,16 +72,16 @@ def expand_grade_page():
                         label.click()
                     except selenium.common.exceptions.ElementNotInteractableException:
                         print("Warning: An Element has been skipped. Please check if it corresponds to an actual subject:")
-                        print(label.get_attribute("outerHTML"))
+                        print(label.get_attribute("innerHTML"))
                         continue
 
             except selenium.common.exceptions.NoSuchElementException:
                 break
 
-        sleep(0.2)
+        sleep(.35)
 
 
-def get_grades_and_ects():
+def get_grades_and_ects() -> pd.DataFrame:
 
     subjects = []
 
@@ -111,25 +113,34 @@ def get_grades_and_ects():
     return subject_grades_df
 
 
-if __name__ == '__main__':
+def main():
     try:
         login()
         sleep(1.5)
         expand_grade_page()
-        #sleep(1)
+        # sleep(1)
         subject_grades_df = get_grades_and_ects()
 
         # remove 5
-        #grades_neq_5 = subject_grades_df['grade'] != 5
-        #subject_grades_df = subject_grades_df[grades_neq_5]
+        grades_neq_5 = subject_grades_df['grade'] != 5
+        subject_grades_df = subject_grades_df[grades_neq_5]
 
         print(subject_grades_df)
 
         subject_grades_df['sumproduct'] = subject_grades_df['ects'] * subject_grades_df['grade']
         result = subject_grades_df['sumproduct'].sum() / subject_grades_df['ects'].sum()
+
         print(f"\nGewichtetes Mittel: {result}\n")
-        input("Press Enter to exit")
+        if save_grades_to_csv:
+            csv_path = "grades.csv"
+            print(f"Saving the grades to {csv_path}")
+            subject_grades_df.to_csv(csv_path, encoding="UTF-8")
+
+        # input("Press Enter to exit")
 
 
     finally:
         driver.close()
+
+if __name__ == '__main__':
+    main()
