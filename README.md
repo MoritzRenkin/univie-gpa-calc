@@ -1,6 +1,6 @@
 # univie-gpa-calc
  
-Scrape your grades from u:space and calculate average grade.add
+Scrape your grades from u:space and calculate average grade.
 
 ## Installing requirements
 Windows:
