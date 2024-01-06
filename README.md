@@ -16,10 +16,10 @@ python3 -m pip install -r requirements.txt
 ## Running the script:
 Windows:
 ```
-py -3 usi_reservation_bot.py
+py -3 scraper.py
 ```
 
 macOS/Linux:
 ```
-python3 usi_reservation_bot.py
+python3 scraper.py
 ```
